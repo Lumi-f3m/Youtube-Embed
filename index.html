@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>System Interface</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body, html {
+            width: 100%; height: 100%;
+            overflow: hidden;
+            background-color: #050505;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        #bg-canvas { position: fixed; top: 0; left: 0; z-index: 1; }
+
+        .overlay {
+            position: relative; z-index: 10;
+            width: 100%; height: 100%;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        .button-wrapper { display: flex; gap: 20px; }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 16px 35px;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 160px;
+            text-transform: lowercase;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.4);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+        }
+
+        .btn.primary { background: white; color: black; border: none; }
+    </style>
+</head>
+<body>
+
+    <canvas id="bg-canvas"></canvas>
+
+    <div class="overlay">
+        <div class="button-wrapper">
+            <button class="btn primary" onclick="launch('about')">about:blank</button>
+            <button class="btn" onclick="launch('blob')">blob://</button>
+        </div>
+    </div>
+
+    <script>
+        // Updated to your active Github path
+        const GITHUB_RAW = 'https://raw.githubusercontent.com/Lumi-f3m/Youtube-Embed/main/mathematics.html';
+        const VERCEL_FALLBACK = 'https://youtube-embed-beryl.vercel.app/mathematics.html';
+
+        async function launch(mode) {
+            try {
+                // Try fetching from Github first
+                let response = await fetch(GITHUB_RAW);
+                
+                // If Github fails (CORS/Headers), try Vercel
+                if (!response.ok) {
+                    response = await fetch(VERCEL_FALLBACK);
+                }
+                
+                const code = await response.text();
+
+                if (mode === 'about') {
+                    const win = window.open('about:blank', '_blank');
+                    if (win) {
+                        win.document.write(code);
+                        win.document.close();
+                    } else {
+                        alert("Pop-up blocked! Please allow pop-ups for this site.");
+                    }
+                } else {
+                    const blob = new Blob([code], { type: 'text/html' });
+                    const blobUrl = URL.createObjectURL(blob);
+                    window.open(blobUrl, '_blank');
+                }
+            } catch (err) {
+                console.error("Launch Error:", err);
+                alert("Failed to fetch code. Check console for details.");
+            }
+        }
+
+        // --- DRIFTING PARTICLES (White to Grey) ---
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function init() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            particles = [];
+            for (let i = 0; i < 120; i++) {
+                let v = Math.floor(Math.random() * 155) + 100;
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    vx: (Math.random() - 0.5) * 0.5,
+                    vy: (Math.random() - 0.5) * 0.5,
+                    size: Math.random() * 2 + 0.2,
+                    color: `rgb(${v},${v},${v})`
+                });
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.x += p.vx; p.y += p.vy;
+                if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+                if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+                ctx.fillStyle = p.color;
+                ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
+            });
+            requestAnimationFrame(animate);
+        }
+
+        init(); animate();
+        window.onresize = init;
+    </script>
+</body>
+</html>
